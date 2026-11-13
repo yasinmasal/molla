@@ -1,0 +1,80 @@
+name: 15 saniyelik Shorts üret
+on:
+  workflow_dispatch:
+    inputs:
+      fact:
+        description: 'Bilgi veya konu (boş bırakılırsa Gemini seçer)'
+        required: false
+        type: string
+      publish:
+        description: 'YouTube yükleme'
+        required: true
+        default: true
+        type: boolean
+  schedule:
+    # Her gün 12:00 İstanbul (09:00 UTC); GitHub yoğunlukta gecikebilir.
+    - cron: '0 9 * * *'
+permissions:
+  contents: write
+concurrency:
+  group: shorts-production
+  cancel-in-progress: false
+jobs:
+  video:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      YT_CLIENT_ID: ${{ secrets.YT_CLIENT_ID }}
+      YT_CLIENT_SECRET: ${{ secrets.YT_CLIENT_SECRET }}
+      YT_REFRESH_TOKEN: ${{ secrets.YT_REFRESH_TOKEN }}
+      INPUT_FACT: ${{ inputs.fact }}
+      SHOULD_PUBLISH: ${{ github.event_name == 'schedule' || inputs.publish }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+      - name: Sistem bağımlılıkları
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg fonts-dejavu-core
+      - name: Python bağımlılıkları
+        run: pip install -r requirements.txt
+      - name: Testler
+        run: python -m unittest discover -s tests -v
+      - name: Video üret
+        run: python studio.py --fact "$INPUT_FACT"
+      - name: Video ve kaynakları sakla
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: shorts-${{ github.run_id }}
+          path: |
+            output/shorts.mp4
+            output/plan.json
+            output/sources.json
+            output/captions.srt
+            output/receipt.json
+          if-no-files-found: warn
+          retention-days: 14
+      - name: YouTube'a gizli yükle
+        if: env.SHOULD_PUBLISH == 'true'
+        run: python upload.py
+      - name: Kullanılan konuyu kaydet
+        if: env.SHOULD_PUBLISH == 'true'
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add history.json
+          if ! git diff --cached --quiet; then
+            git commit -m 'Günlük video konusunu kaydet [skip ci]'
+            git push
+          fi
+      - name: Yükleme bilgisini sakla
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: yukleme-${{ github.run_id }}
+          path: output/receipt.json
+          if-no-files-found: ignore
+          retention-days: 14
