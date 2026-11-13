@@ -171,7 +171,7 @@ def render():
         # Yavaş yakınlaşma: görsel motoru sabit 3D görselleri hareketlendirir.
         zoom=f"zoompan=z='min(zoom+0.00018,1.05)':d=1:s={W}x{H}:fps={FPS}"
         cmd('ffmpeg','-v','error','-y','-loop','1','-framerate',str(FPS),'-i',OUT/f'image{i}.png',
-            '-i',OUT/f'voice{i}.wav','-vf',zoom+',format=yuv420p','-t',str(dur),
+            '-i',OUT/f'voice{i}.wav','-vf',zoom+f',fade=t=in:st=0:d=0.18,fade=t=out:st={dur-0.18}:d=0.18,format=yuv420p','-t',str(dur),
             '-c:v','libx264','-preset','veryfast','-crf','21','-c:a','aac','-b:a','128k',
             '-shortest',OUT/f'scene{i}.mp4')
     (OUT/'concat.txt').write_text(''.join(f"file 'scene{i}.mp4'\n" for i in range(3)), encoding='utf8')
