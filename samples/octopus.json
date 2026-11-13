@@ -1,0 +1,10 @@
+{
+  "title": "Ahtapotların üç kalbi",
+  "description": "Ahtapotların dolaşım sistemi hakkında kısa bilgi.",
+  "duration": 15,
+  "scenes": [
+    {"id":1,"start":0,"end":3,"background":"ocean","character":"octopus","animation":"enter_bounce","palette":"ocean","text":"Kaç kalbi var?","narration":"Bir ahtapotun kaç kalbi var?"},
+    {"id":2,"start":3,"end":10,"background":"ocean","character":"octopus","animation":"pulse","palette":"ocean","text":"Tam 3 kalp!","narration":"Ahtapotların tam üç kalbi vardır."},
+    {"id":3,"start":10,"end":15,"background":"ocean","character":"octopus","animation":"blood_flow","palette":"ocean","text":"2 solungaç + 1 vücut","narration":"İkisi solungaçlara, biri vücuda kan pompalar."}
+  ]
+}
